@@ -8,8 +8,11 @@ var buildingName = system.args[4] || 'Account Name Not Available';
 
 //generate the page once it has finished loading
 page.onLoadFinished = function(){
+  //the setTimeout ensures that the page has fully rendered
+  window.setTimeout(function(){
     page.render(system.args[2]);
     phantom.exit();
+  },2000);
 };
 
 // change the paper size to A3 or Tabloid as Letter doesn't work or only works sometimes, add small margins otherwise the content is cut off
