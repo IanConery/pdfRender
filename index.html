@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>test invoice</title>
+
+  <link rel="stylesheet" href="./bootstrap-3.3.6-dist/css/bootstrap.css">
+  <link rel="stylesheet" href="main.css">
+  <script   src="https://code.jquery.com/jquery-2.2.3.min.js"   integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo="   crossorigin="anonymous"></script>
+  <script src="data.js"></script>
+  <script src="main.js"></script>
+</head>
+<body>
+<!-- main div -->
+  <div id="main" class="container">
+    <div class="row pagefill">
+      <div id="header"><b>Energy Usage Invoice</b></div>
+
+      <div class="col-md-8">
+
+        <!-- account info div -->
+        <div id="invoice-data" class="inner-data">
+
+        </div>
+        <!-- end account info div -->
+
+        <!-- current usage -->
+        <div id="current-usage" class="img-rounded">
+          <div class="sub-heading">Current Usage</div>
+        </div>
+        <!-- end current usage -->
+
+        <!-- current charges -->
+        <div id="current-charges" class="img-rounded">
+          <div class="sub-heading">Current Charges</div>
+        </div>
+        <!-- end current charges -->
+      </div>
+
+      <div class="col-md-4">
+        <!-- utility details side bar -->
+        <div id="utility-details" class="img-rounded">
+          <div class="sub-heading util-det text-nowrap">Utility Details</div>
+        </div>
+        <!-- end utility details side bar -->
+      </div>
+
+    </div>
+
+    <!-- summary information -->
+    <div id="summary-information" class="img-rounded pagebreak">
+      <div class="sub-heading gray-head">Summary Information</div>
+    </div>
+    <!-- end summary information -->
+
+    <!-- meter details -->
+    <div id="meter-details" class="img-rounded">
+
+    </div>
+    <!-- end meter details -->
+  </div>
+  <!-- end main div -->
+</body>
+</html>
