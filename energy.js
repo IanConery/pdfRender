@@ -110,16 +110,17 @@ $(document).ready(function(){
   /*Current usage variables*/
   var meterCount = meters.length;
   var billingDays = invoice.billingDays || 'Number of days not provided';
-  var endDate = dateFormat(invoice.end) || 'No date provided';//this variable is shared with current charges as well
+  var billingPeriod = dateFormat(invoice.start).substring(2) || 'No date provided';
   var tenantUsage = fourDeci(invoice.tenantEnergyUsage) || 'Information not provided';
   var peakDemand = fourDeci(invoice.tenantPeakKw) || 'Information not provided';
 
   //populate current usage
-  $('#current-usage').append('<table class="table usage-table"><thead><tr><th>Meter Count</th><th>Billing Days</th><th>Billing Period</th><th>Usage (kWh)</th><th>Peak Demand (kW)</th></tr></thead><td class="text-center">' + meterCount + '</td><td class="text-center">' + billingDays + '</td><td>' + endDate + '</td><td>' + tenantUsage + '</td><td>' + peakDemand + '</td></table>');
+  $('#current-usage').append('<table class="table usage-table"><thead><tr><th>Meter Count</th><th>Billing Days</th><th>Billing Period</th><th>Usage (kWh)</th><th>Peak Demand (kW)</th></tr></thead><td class="text-center">' + meterCount + '</td><td class="text-center">' + billingDays + '</td><td>' + billingPeriod + '</td><td>' + tenantUsage + '</td><td>' + peakDemand + '</td></table>');
   //end current usage
 
   /*Current charges variables*/
   var startDate = dateFormat(invoice.start) || 'Date not provided';
+  var endDate = dateFormat(invoice.end) || 'No date provided';
   var serviceCharge = dollarFormat(invoice.serviceCharge) || 'No current charges';
   var demandCharge = dollarFormat(invoice.demandCharge) || 'No current charges';
   var generationCharge = dollarFormat(invoice.generationCharge) || 'No current charges';
@@ -161,14 +162,14 @@ $(document).ready(function(){
       var svcRate = fourDeci(cur.serviceRate) ? ('$' + fourDeci(cur.serviceRate)) : 'Rate not available';
       var svcAmt = dollarFormat(cur.serviceCharge) || 'No current charges';
       var description = cur.meterDescription || 'No description provided';
-      var peakDemand = cur.peakDemand ? cur.peakDemand + 'kW' : 'Unavailable';
+      var peakDemand = cur.peakDemand ? cur.peakDemand + ' kW' : 'Unavailable';
       var demandRate = fourDeci(cur.demandRate) ? ('$' + fourDeci(cur.demandRate)) : 'Rate not available';
       var demandCharge = dollarFormat(cur.demandCharge) || 'No current charges';
       var peakTime = cur.peakTime || 'No date provided';
       var meterStart = dateFormat(cur.startTime);
       var meterEnd = dateFormat(cur.endTime);
-      var startValue = fourDeci(cur.startValue) ? fourDeci(cur.startValue) + 'kWh' : 'No starting value provided';
-      var endValue = fourDeci(cur.endValue) ? fourDeci(cur.endValue) + 'kWh' : 'No ending value provided';
+      var startValue = fourDeci(cur.startValue) ? fourDeci(cur.startValue) + ' kWh' : 'No starting value provided';
+      var endValue = fourDeci(cur.endValue) ? fourDeci(cur.endValue) + ' kWh' : 'No ending value provided';
       var genProvider = cur.genProvider || 'Not provided';
       var genRate = fourDeci(cur.generationRate) ? ('$' + fourDeci(cur.generationRate)) : 'Rate not available';
       var genCharge = dollarFormat(cur.generationCharge) || 'No current charges';
@@ -188,14 +189,14 @@ $(document).ready(function(){
       if((i + 1 ) % metersPerPage === 0 || i === meterCount - 1){
         var lastDiv = metersPerPage + 1;
 
-        if(i === meterCount - 1){
+        if(i === meterCount - 1 && (i + 1) % metersPerPage !== 0){
           lastDiv = ((i + 1) % metersPerPage) + 1;
         }
 
         $('#meter-details > div:nth-child(' + divs + ') > div:nth-child(' + lastDiv + ')').addClass('last-row');
         $('#meter-details').append('</div>');
 
-        if((i + 1) % metersPerPage === 0){
+        if((i + 1) % metersPerPage === 0 && i !== meterCount - 1){
           $('#meter-details').append('<div class="repeater img-rounded pagebreak"><div class="sub-heading gray-head special">Meter Details</div>');
         }
 
