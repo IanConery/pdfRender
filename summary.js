@@ -103,7 +103,7 @@ $(document).ready(function(){
 
   for(var i = 0; i < summaryCount; i++){
     var current = summaryData[i].response.success;
-    $('#tenant-summary > table').append('<tr><td>' + current.Invoice.building.buildingDisplayName + '</td><td>Tenant Name Fix Me</td><td>' + current.Invoice.invoiceNumber + '</td></tr>')
+    $('#tenant-summary > table').append('<tr><td>' + current.Invoice.building.buildingDisplayName + '</td><td>Tenant Name Fix Me</td><td>' + current.Invoice.invoiceNumber + '</td><td>' + current.Invoice.start + '</td><td>' + current.Invoice.end + '</td><td>' + current.Invoice.billingDays + '</td><td>' + current.Invoice.tenantEnergyUsage + '</td><td>Estimated Fix Me</td><td>' + current.Invoice.invoiceTotal + '</td></tr>')
   }
   $('#tenant-summary').append('</table>');
   //end tenant summary
