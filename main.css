@@ -278,6 +278,17 @@
 
 /**************************** End Meter Details **************************/
 
+/**************************** Tenant Summary ******************************/
+
+  #tenant-summary{
+    background: #e2ecf1 ;
+    border: 2px solid #00669a ;
+    margin: 40px 5px 10px 0px ;
+    padding: 0px 20px 5px 0px ;
+  }
+
+/**************************** End Tenant Summary **************************/
+
 /**************************** Table styles *******************************/
 
   .table-noborder > thead > tr > th {
