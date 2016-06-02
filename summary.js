@@ -50,14 +50,26 @@ var dateFormat = function(date){
   return day + ' ' + months[month] + ', ' + year;
 };
 
-var fourDeci = function(num){
+var percisionRound = function(num, points){
+  var result = 0;
+  //num has the potential to be a falsey value in which case we return 0
   if(!num){
-    return 0;
+    return result;
   }
-  num = Math.round(num * 10000) / 10000;
+  //this makes the points argument optional, Leaving it off rounds to 0 decimal places
+  points = points || 0;
+  var precision = '1';
+  for(var i = 0; i < points; i++){
+    precision += '0';
+  }
+  //convert precision string to number
+  precision = parseInt(precision,10);
+  //this moves the decimal place so the number can be rounded correctly and then moves it back
+  num = Math.round(num * precision) / precision;
   var str = num.toString().split('.');
   var wholeNum = str[0].split('').reverse().join('');
   var decimal = str[1];
+  //the following sanity check shouldn't be neccessary, however I am leaving it because, shit happens
   if(!decimal || decimal.length === 0){
     decimal = '00'
   }
@@ -69,23 +81,25 @@ var fourDeci = function(num){
       }
   }
   wholeNum = arr.reverse().join('');
-  return wholeNum + '.' + decimal;
+  points === 0 ? result = wholeNum : result = wholeNum + '.' + decimal;
+  return result;
 };
 
 
 $(document).ready(function(){
 
   var invoice = data.responses[0].response.success.Invoice;
-  var utility = data.responses[0].response.success.UtilityBills;
-  var meters = data.responses[0].response.success.Meters;
   var summaryData = data.responses;
 
+  var currentTotalAll = 0;
+  var serviceChargeAll = 0;
+  var demandChargeAll = 0;
+  var generationChargeAll = 0;
+  var oldestStartDate = [];
+  var newestEndDate = [];
 
   /*Account info variables*/
-  //need to replace buildingDisplayName with "No tenant provided" also need to add data.accountName to the json
-  //Some of the variables are shared with the summary portion
-  var accountName = data.accountName || invoice.building.buildingDisplayName;
-  //need to add the 2nd address field to this variable and check for a null val
+  var accountName = invoice.building.buildingDisplayName || 'Building name not available';
   var streetAddress = (invoice.building.addresss1 + invoice.building.addresss2)|| 'Address not available';
   var city = invoice.building.city || 'No city provided';
   var state = invoice.building.state || 'No state provided';
@@ -99,118 +113,72 @@ $(document).ready(function(){
   var summaryCount = summaryData.length;
 
   //populate tenant summary
-  $('#tenant-summary').append('<table class="table usage-table"><thead><tr><th>Building Name</th><th>Tenant Name</th><th>Invoice Number</th><th>Start Date</th><th>End Date</th><th>Billing Days</th><th>kWh</th><th>Estimated</th><th>Amount</th></tr></thead>');
+  $('#tenant-summary').append('<table class="table usage-table"><thead><tr><th class="text-center">Building Name</th><th class="text-center">Tenant Name</th><th class="text-center">Invoice Number</th><th class="text-center">Start Date</th><th class="text-center">End Date</th><th class="text-center">Billing Days</th><th class="text-center">kWh</th><th class="text-center">Estimated</th><th class="text-center">Amount</th></tr></thead>');
 
   for(var i = 0; i < summaryCount; i++){
     var current = summaryData[i].response.success;
-    $('#tenant-summary > table').append('<tr><td>' + current.Invoice.building.buildingDisplayName + '</td><td>Tenant Name Fix Me</td><td>' + current.Invoice.invoiceNumber + '</td><td>' + current.Invoice.start + '</td><td>' + current.Invoice.end + '</td><td>' + current.Invoice.billingDays + '</td><td>' + current.Invoice.tenantEnergyUsage + '</td><td>Estimated Fix Me</td><td>' + current.Invoice.invoiceTotal + '</td></tr>')
+    var name = current.Invoice.building.buildingDisplayName;
+    var invoiceNumber = current.Invoice.invoiceNumber;
+    var start = dateFormat(current.Invoice.start);
+    var end = dateFormat(current.Invoice.end);
+    var billingDays = current.Invoice.billingDays;
+    var usage = percisionRound(current.Invoice.tenantEnergyUsage,2);
+    var total = dollarFormat(current.Invoice.invoiceTotal);
+    var startDateArray = current.Invoice.start.split('-');
+    var endDateArray = current.Invoice.end.split('-');
+
+    //while looping accumulate all needed data for the page
+    currentTotalAll += current.Invoice.invoiceTotal;
+    serviceChargeAll += current.Invoice.serviceCharge;
+    demandChargeAll += current.Invoice.demandCharge;
+    generationChargeAll += current.Invoice.generationCharge;
+
+    //calculate the date range
+    //the date is supplied as a string in 'year-month-day' format
+    if(oldestStartDate.length === 0){
+      oldestStartDate = startDateArray;
+    }else{
+      if(parseInt(oldestStartDate[0],10) > parseInt(startDateArray[0],10)){
+        oldestStartDate = startDateArray;
+      }else if(parseInt(oldestStartDate[0],10) === parseInt(startDateArray[0],10)){
+        if(parseInt(oldestStartDate[1],10) > parseInt(startDateArray[1],10)){
+          oldestStartDate = startDateArray;
+        }
+      }
+    }
+
+    if(newestEndDate.length === 0){
+      newestEndDate = endDateArray;
+    }else{
+      if(parseInt(newestEndDate[0],10) < parseInt(endDateArray[0],10)){
+        newestEndDate = endDateArray;
+      }else if(parseInt(newestEndDate[0],10) === parseInt(endDateArray[0],10)){
+        if(parseInt(newestEndDate[1],10) < parseInt(endDateArray[1],10)){
+          newestEndDate = endDateArray;
+        }
+      }
+    }
+
+    $('#tenant-summary > table').append('<tr><td class="text-center">' + name + '</td><td class="text-center">Tenant Name Fix Me</td><td class="text-center">' + invoiceNumber + '</td><td class="text-center">' + start + '</td><td class="text-center">' + end + '</td><td class="text-center">' + billingDays + '</td><td class="text-right">' + usage + '</td><td class="text-center">Estimated Fix Me</td><td class="text-right">' + total + '</td></tr>');
+
   }
-  $('#tenant-summary').append('</table>');
+
+  currentTotalAll = dollarFormat(currentTotalAll);
+
+  $('#tenant-summary > table').append('<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><th class="text-center">Total</th><td class="text-right">' + currentTotalAll + '</td></tr></tfoot></table>');
   //end tenant summary
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   /*Current charges variables*/
-  var startDate = dateFormat(invoice.start) || 'Date not provided';
-  var endDate = dateFormat(invoice.end) || 'No date provided';
-  var serviceCharge = dollarFormat(invoice.serviceCharge) || 'No current charges';
-  var demandCharge = dollarFormat(invoice.demandCharge) || 'No current charges';
-  var generationCharge = dollarFormat(invoice.generationCharge) || 'No current charges';
-  var currentCharges = dollarFormat(invoice.invoiceTotal) || 'No current charges';//shared with summary
+  var startDate = dateFormat(oldestStartDate.join('-'));
+  var endDate = dateFormat(newestEndDate.join('-'));
+  serviceChargeAll = dollarFormat(serviceChargeAll);
+  demandChargeAll = dollarFormat(demandChargeAll);
+  generationChargeAll = dollarFormat(generationChargeAll);
 
   //populate current charges
-  $('#current-charges').append('<table class="table usage-table"><thead><tr><th>Current Charges</th><th>Start Date</th><th>End Date</th><th>Total</th></tr></thead><tbody><tr><td>Service Charge</td><td>' + startDate + '</td><td>' + endDate + '</td><td>' + serviceCharge + '</td></tr><tr><td>Demand Charge</td><td></td><td></td><td>' + demandCharge + '</td></tr><tr><td>Generation Charge</td><td></td><td></td><td>' + generationCharge + '</td></tr><tr><th>Total Current Charges</th><td></td><td></td><th>' + currentCharges + '</th></tr></tbody></table>');
+  $('#current-charges').append('<table class="table usage-table"><thead><tr><th>Current Charges</th><th class="text-center">Start Date</th><th class="text-center">End Date</th><th class="text-right">Total</th></tr></thead><tbody><tr><td>Service Charge</td><td class="text-center">' + startDate + '</td><td class="text-center">' + endDate + '</td><td class="text-right">' + serviceChargeAll + '</td></tr><tr><td>Demand Charge</td><td></td><td></td><td class="text-right">' + demandChargeAll + '</td></tr><tr><td>Generation Charge</td><td></td><td></td><td class="text-right">' + generationChargeAll + '</td></tr><tr><th>Total Current Charges</th><td></td><td></td><th class="text-right">' + currentTotalAll + '</th></tr></tbody></table>');
   //end current charges
 
-  /*Summary information variables*/
-  var summaryUtil = '';
-  for(var i = 0; i < utility.length; i++){
-    if(i === utility.length - 1){
-      summaryUtil += utility[i].utilityMeterNumber;
-    }else{
-      summaryUtil += utility[i].utilityMeterNumber + ', ';
-    }
-  }
-  if(!summaryUtil){
-    return "No utilities at this location";
-  }
-
-  //populate summary information
-  $('#summary-information').append('<div class="row inner-summary"><div class="col-md-7"></div><div class="col-md-5"><table class="table table-noborder inner-summary"><thead><tr><th>Bill Summary:</th></tr></thead><tbody><tr><td>Account Name: </td><td>' + accountName + '</td></tr><tr><td>Invoice Number:</td><td>' + invoiceNumber + '</td></tr><tr></td><td>Utility Numbers:</td><td>' + summaryUtil + '</td></tr><tr><td>Current Charges:</td><td>' + currentCharges + '</td></tr><tr><td>Invoice created using:</td><td class="tenant-eye"> tenant <span class="red-font">eye</span></td></tr></tbody></table></div></div>');
-  //end summary information
-
-
-  //populate meter details
-  if(!meterCount){
-    $('#meter-details').hide();
-  }else{
-    var divs = 1;
-    var metersPerPage = 3;
-    for(var i = 0; i < meterCount; i++){
-      var  cur = meters[i];
-      var meterName = cur.meterName || 'Name not provided';
-      var svcProvider = cur.svcProvider || 'Not provided';
-      var svcCharge = fourDeci(cur.usage);
-      var svcRate = fourDeci(cur.serviceRate) ? ('$' + fourDeci(cur.serviceRate)) : 'Rate not available';
-      var svcAmt = dollarFormat(cur.serviceCharge) || 'No current charges';
-      var description = cur.meterDescription || 'No description provided';
-      var peakDemand = cur.peakDemand ? cur.peakDemand + ' kW' : 'Unavailable';
-      var demandRate = fourDeci(cur.demandRate) ? ('$' + fourDeci(cur.demandRate)) : 'Rate not available';
-      var demandCharge = dollarFormat(cur.demandCharge) || 'No current charges';
-      var peakTime = cur.peakTime || 'No date provided';
-      var meterStart = dateFormat(cur.startTime);
-      var meterEnd = dateFormat(cur.endTime);
-      var startValue = fourDeci(cur.startValue) ? fourDeci(cur.startValue) + ' kWh' : 'No starting value provided';
-      var endValue = fourDeci(cur.endValue) ? fourDeci(cur.endValue) + ' kWh' : 'No ending value provided';
-      var genProvider = cur.genProvider || 'Not provided';
-      var genRate = fourDeci(cur.generationRate) ? ('$' + fourDeci(cur.generationRate)) : 'Rate not available';
-      var genCharge = dollarFormat(cur.generationCharge) || 'No current charges';
-      var total = cur.serviceCharge + cur.demandCharge + cur.generationCharge;
-      if(total){
-        total = dollarFormat(total);
-      }else{
-        total = '$0.00';
-      }
-
-      if(i === 0){
-        $('#meter-details').append('<div class="repeater img-rounded pagebreak"><div class="sub-heading gray-head special">Meter Details</div>');
-      }
-
-        $('#meter-details > div:nth-child(' + divs + ')').append('<div class="inner-meter"><table class="table table-noborder"><thead><th>Meter ' + (i + 1) + ' :</th></thead><tbody><tr><td class="col-one">Meter Name:</td><td class="col-two">' + meterName + '</td><td class="col-three">Service Charge (' + svcProvider + '):<br>' + svcCharge + ' kWh @ ' + svcRate + '</td><th class="col-four">' + svcAmt + '</th></tr><tr><td>Description:</td><td class="long-name">' + description + '</td><td></td></tr><tr><td>Peak Demand:</td><td>' + peakDemand + '</td><td>Demand Charge (' + svcProvider + '):<br>' + fourDeci(cur.peakDemand) + ' kW @ ' + demandRate + '</td><th>' + demandCharge + '</th></tr><tr><td>Peak Time:</td><td>' + peakTime + '</td></tr><tr><td>Start:</td><td>' + meterStart + '<br>' + startValue + ' </td><td>Generation Charge (' + genProvider + '):<br>' + svcCharge + ' kWh @ ' + genRate + '</td><th>' + genCharge + '</th></tr><tr><td>End:</td><td>' + meterEnd + '<br>' + endValue + ' </td><th><br>Total:</th><th><br>' + total + '</th></tr></tbody></table></div>');
-
-      if((i + 1 ) % metersPerPage === 0 || i === meterCount - 1){
-        var lastDiv = metersPerPage + 1;
-
-        if(i === meterCount - 1 && (i + 1) % metersPerPage !== 0){
-          lastDiv = ((i + 1) % metersPerPage) + 1;
-        }
-
-        $('#meter-details > div:nth-child(' + divs + ') > div:nth-child(' + lastDiv + ')').addClass('last-row');
-        $('#meter-details').append('</div>');
-
-        if((i + 1) % metersPerPage === 0 && i !== meterCount - 1){
-          $('#meter-details').append('<div class="repeater img-rounded pagebreak"><div class="sub-heading gray-head special">Meter Details</div>');
-        }
-
-        divs++;
-      }//end if
-
-    }
-  }
-  //end meter details
 });
 
